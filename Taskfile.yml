@@ -1,0 +1,25 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  NAME: twarit
+  EXE: Twarit
+
+tasks:
+  default:
+    cmds:
+      - task: lib
+      - task: build
+  
+  build:
+    cmds:
+      - go build ./cmd/twarit/
+
+  lib:
+    cmds:
+      - windres -o ./cmd/twarit/{{.NAME}}.syso {{.NAME}}.rc
+  
+  run:
+    cmds:
+      - "./\"{{.EXE}}.exe\""
