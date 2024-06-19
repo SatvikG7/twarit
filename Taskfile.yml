@@ -4,22 +4,28 @@ version: '3'
 
 vars:
   NAME: twarit
-  EXE: Twarit
+  EXE: Twarit.exe
+  PACKAGED_EXE: twarit_windows_x64.exe
 
 tasks:
   default:
     cmds:
       - task: lib
       - task: build
-  
+
   build:
     cmds:
-      - go build ./cmd/twarit/
+      - go build -o ./dist/{{.EXE}} ./cmd/twarit/
 
   lib:
     cmds:
       - windres -o ./cmd/twarit/{{.NAME}}.syso {{.NAME}}.rc
   
+  pack:
+    cmds:
+      - go build -o ./dist/{{.EXE}} ./cmd/twarit/
+      - upx ./dist/{{.EXE}} -o ./dist/{{.PACKAGED_EXE}}
+
   run:
     cmds:
       - "./\"{{.EXE}}.exe\""
