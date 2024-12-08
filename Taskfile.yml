@@ -1,31 +1,46 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 vars:
-  NAME: twarit
-  EXE: Twarit.exe
-  PACKAGED_EXE: twarit_windows_x64.exe
+    NAME: twarit
+    EXE: Twarit.exe
+    PACKAGED_EXE: twarit_windows_x64.exe
 
 tasks:
-  default:
-    cmds:
-      - task: lib
-      - task: build
+    default:
+        cmds:
+            - task: run
 
-  build:
-    cmds:
-      - go build -o ./dist/{{.EXE}} ./cmd/twarit/
+    build:
+        cmds:
+            - task: lib
+            - go build -o ./dist/{{.EXE}} ./cmd/twarit/
 
-  lib:
-    cmds:
-      - windres -o ./cmd/twarit/{{.NAME}}.syso {{.NAME}}.rc
-  
-  pack:
-    cmds:
-      - go build -o ./dist/{{.EXE}} ./cmd/twarit/
-      - upx ./dist/{{.EXE}} -o ./dist/{{.PACKAGED_EXE}}
+    lib:
+        cmds:
+            - windres -o ./cmd/twarit/{{.NAME}}.syso {{.NAME}}.rc
 
-  run:
-    cmds:
-      - "./\"{{.EXE}}.exe\""
+    clean:
+        cmds:
+            - rm -rf ./dist
+
+    copy:
+        cmds:
+            - cp -rf ./src/ ./dist/
+
+    pack:
+        cmds:
+            - upx ./dist/{{.EXE}} -o ./dist/{{.PACKAGED_EXE}}
+            - rm ./dist/{{.EXE}}
+
+    release:
+        cmds:
+            - task: clean
+            - task: build
+            - task: copy
+            - task: pack
+
+    run:
+        cmds:
+            - go run ./cmd/twarit/twarit.go

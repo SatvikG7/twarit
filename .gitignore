@@ -1,3 +1,5 @@
 *.syso
 *.exe
 dist/
+
+Received/

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Explorer - TwaritTransfer</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+                color: #333;
+                user-select: none;
+            }
+
+            #app {
+                max-width: 1440px;
+                margin: 20px auto;
+                padding: 20px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+
+            #path-wrapper {
+                border-radius: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #c {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 5px 10px 20px;
+                height: 20px;
+                background-color: #9bc4e2;
+                border-radius: 20px 0 0 20px;
+            }
+
+            #path {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 20px 10px 5px;
+                height: 20px;
+                background-color: #d0d0d0;
+                border-radius: 0 20px 20px 0;
+            }
+
+            h1 {
+                text-align: center;
+                color: #444;
+            }
+
+            .container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+                justify-content: space-around;
+            }
+
+            .file,
+            .directory,
+            .go-up {
+                width: 100px;
+                padding: 10px;
+                text-align: center;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: transform 0.2s, background-color 0.2s;
+            }
+
+            .go-up {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            h3 {
+                margin: 0;
+                font-size: 16px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .file:hover,
+            .directory:hover,
+            .go-up:hover {
+                background-color: #d0d0d0;
+                transform: scale(1.05);
+            }
+
+            .icon {
+                font-size: 40px;
+            }
+
+            .directory:hover {
+                background-color: #ffda77;
+            }
+
+            .go-up {
+                background-color: #9bc4e2;
+            }
+
+            .go-up:hover {
+                background-color: #7faed1;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="app">
+            <h1 id="header">File Explorer</h1>
+
+            <h2 id="path-wrapper">
+                <span id="c">C:</span>
+                <span id="path"></span>
+            </h2>
+            <div class="container"></div>
+        </div>
+
+        <script>
+            const FILE = (name) => {
+                return `
+                  <div class="file" data-name="${name}" data-type="file" title="${name}">
+                      <div class="icon file-icon">📄</div>
+                      <h3>${name}</h3>
+                  </div>
+              `;
+            };
+
+            const DIR = (name) => {
+                return `
+                  <div class="directory" data-name="${name}" data-type="directory" title="${name}">
+                      <div class="icon directory-icon">📁</div>
+                      <h3>${name}</h3>
+                  </div>
+              `;
+            };
+
+            const GO_UP = () => {
+                return `
+                  <div class="go-up" data-type="go-up">
+                      <div class="icon">🔙</div>
+                  </div>
+              `;
+            };
+
+            let currentPath = "/";
+
+            let pathElement = document.getElementById("path");
+
+            const updatePath = () => {
+                pathElement.innerText = currentPath;
+            };
+
+            const loadFiles = async (path) => {
+                let response = await fetch(`/files${path}`);
+                if (!response.ok) {
+                    alert("Error loading files: " + response.statusText);
+                    return;
+                }
+                let data = await response.json();
+                let container = document.querySelector(".container");
+                container.innerHTML = "";
+
+                if (currentPath !== "/") {
+                    container.innerHTML += GO_UP();
+                }
+
+                data.forEach((file) => {
+                    if (file.isDir) {
+                        container.innerHTML += DIR(file.name);
+                    } else {
+                        container.innerHTML += FILE(file.name);
+                    }
+                });
+
+                attachEventListeners();
+            };
+
+            const attachEventListeners = () => {
+                document.querySelectorAll(".go-up").forEach((element) => {
+                    element.onclick = (e) => {
+                        currentPath = currentPath.slice(
+                            0,
+                            currentPath.lastIndexOf(
+                                "/",
+                                currentPath.length - 2
+                            ) + 1
+                        );
+                        loadFiles(currentPath);
+                        updatePath();
+                    };
+                });
+
+                document
+                    .querySelectorAll(".file, .directory")
+                    .forEach((element) => {
+                        element.onclick = (e) => {
+                            const name = element.dataset.name;
+                            const type = element.dataset.type;
+
+                            if (type === "directory") {
+                                currentPath += `${name}/`;
+                                loadFiles(currentPath);
+                            } else if (type === "file") {
+                                window.open(
+                                    `/files${currentPath}${name}`,
+                                    "_blank"
+                                );
+                            }
+                            updatePath();
+                        };
+                    });
+            };
+
+            window.onload = () => {
+                updatePath();
+                loadFiles(currentPath);
+            };
+        </script>
+    </body>
+</html>

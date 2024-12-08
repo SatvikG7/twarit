@@ -11,6 +11,7 @@ import (
 func SetupServer() {
 	router.Route()
 }
+
 func Listen(port string) {
 	var loc string = ":"
 	loc = loc + port

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,4 +56,47 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Upload successful")
+}
+
+// struct to store file info
+type fileInfo struct {
+	Name  string `json:"name"`
+	IsDir bool   `json:"isDir"`
+}
+
+func ExploreHandler(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path[len("/files"):]
+
+	files, err := os.Stat(path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if files.IsDir() {
+		// get all files in C: directory
+		files, err := os.ReadDir(path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// store file info
+		var fileInfos []fileInfo
+		for _, file := range files {
+			fileInfos = append(fileInfos, fileInfo{
+				Name:  file.Name(),
+				IsDir: file.IsDir(),
+			})
+		}
+
+		// send file info as json
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fileInfos)
+		return
+	}
+
+	// serve file
+	http.ServeFile(w, r, path)
 }

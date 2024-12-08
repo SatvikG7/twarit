@@ -13,11 +13,14 @@ func Route() {
 	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "src/send.html")
 	})
+
+	http.HandleFunc("/explore", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "src/explore.html")
+	})
+	
 	http.Handle("/favicon.ico", http.StripPrefix("/", srcDir))
 	http.Handle("/logo.png", http.StripPrefix("/", srcDir))
-
-	// Serve all files in D: direcory
-	http.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir("/"))))
+	http.HandleFunc("/files/", handler.ExploreHandler)
 
 	// Handle file uploads
 	http.HandleFunc("/upload", handler.UploadHandler)
