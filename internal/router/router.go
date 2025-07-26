@@ -14,9 +14,8 @@ func Route() {
 		http.ServeFile(w, r, "src/send.html")
 	})
 
-	http.HandleFunc("/explore", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "src/explore.html")
-	})
+	http.HandleFunc("/explore", handler.ExplorePageHandler)
+	http.HandleFunc("/explore/", handler.ExplorePageHandler)
 
 	http.Handle("/favicon.ico", http.StripPrefix("/", srcDir))
 	http.Handle("/logo.png", http.StripPrefix("/", srcDir))

@@ -4,119 +4,464 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Explorer - TwaritTransfer</title>
-        <link rel="stylesheet" href="explore.css" />
+        <link rel="stylesheet" href="/explore.css" />
     </head>
 
     <body>
         <div id="app">
-            <h1 id="header">File Explorer</h1>
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo-section">
+                        <span class="emoji-icon">📁</span>
+                        <h1>File Explorer</h1>
+                    </div>
+                    <div class="breadcrumb-wrapper">
+                        <div class="breadcrumb" id="breadcrumb"></div>
+                    </div>
+                </div>
+            </header>
 
-            <h2 id="path-wrapper">
-                <span id="c">C:</span>
-                <span id="path"></span>
-            </h2>
-            <div class="container"></div>
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button
+                        class="btn btn-secondary"
+                        id="go-back"
+                        title="Go back"
+                    >
+                        <span class="emoji-icon">⬅️</span>
+                    </button>
+                    <button
+                        class="btn btn-secondary"
+                        id="go-forward"
+                        title="Go forward"
+                    >
+                        <span class="emoji-icon">➡️</span>
+                    </button>
+                    <button
+                        class="btn btn-secondary"
+                        id="refresh"
+                        title="Refresh"
+                    >
+                        <span class="emoji-icon">🔄</span>
+                    </button>
+                </div>
+                <div class="toolbar-right">
+                    <div class="view-toggle">
+                        <button
+                            class="btn btn-secondary active"
+                            id="grid-view"
+                            title="Grid view"
+                        >
+                            <span class="emoji-icon">⊞</span>
+                        </button>
+                        <button
+                            class="btn btn-secondary"
+                            id="list-view"
+                            title="List view"
+                        >
+                            <span class="emoji-icon">☰</span>
+                        </button>
+                    </div>
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="Search files..."
+                            id="search-input"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <main class="main-content">
+                <div class="container" id="file-container"></div>
+                <div class="loading" id="loading" style="display: none">
+                    <span class="emoji-icon spinning">⚡</span>
+                    <span>Loading files...</span>
+                </div>
+                <div class="empty-state" id="empty-state" style="display: none">
+                    <span class="emoji-icon large">📂</span>
+                    <h3>This folder is empty</h3>
+                    <p>No files or folders to display</p>
+                </div>
+            </main>
         </div>
 
         <script>
-            const FILE = (name) => {
-                return `
-                  <div class="file" data-name="${name}" data-type="file" title="${name}">
-                      <div class="icon file-icon">📄</div>
-                      <h3>${name}</h3>
-                  </div>
-              `;
+            // File type detection
+            const getFileIcon = (fileName) => {
+                const ext = fileName.split(".").pop().toLowerCase();
+                const iconMap = {
+                    // Documents
+                    pdf: "📄",
+                    doc: "📝",
+                    docx: "📝",
+                    xls: "📊",
+                    xlsx: "📊",
+                    ppt: "📽️",
+                    pptx: "📽️",
+                    txt: "📄",
+
+                    // Images
+                    jpg: "🖼️",
+                    jpeg: "🖼️",
+                    png: "🖼️",
+                    gif: "🖼️",
+                    svg: "🖼️",
+                    bmp: "🖼️",
+                    webp: "🖼️",
+
+                    // Videos
+                    mp4: "🎬",
+                    avi: "🎬",
+                    mkv: "🎬",
+                    mov: "🎬",
+                    wmv: "🎬",
+                    flv: "🎬",
+
+                    // Audio
+                    mp3: "🎵",
+                    wav: "🎵",
+                    flac: "🎵",
+                    aac: "🎵",
+                    ogg: "🎵",
+
+                    // Archives
+                    zip: "🗜️",
+                    rar: "🗜️",
+                    "7z": "🗜️",
+                    tar: "🗜️",
+                    gz: "🗜️",
+
+                    // Code
+                    js: "⚡",
+                    html: "🌐",
+                    css: "🎨",
+                    py: "🐍",
+                    java: "☕",
+                    cpp: "⚙️",
+                    c: "⚙️",
+                    go: "🔷",
+                    php: "🐘",
+                    rb: "💎",
+                    json: "📋",
+                    xml: "📋",
+
+                    // Executables
+                    exe: "⚙️",
+                    msi: "⚙️",
+                    deb: "📦",
+                    rpm: "📦",
+                    dmg: "💿",
+                    iso: "💿",
+                };
+
+                return iconMap[ext] || "📄";
             };
 
-            const DIR = (name) => {
-                return `
-                  <div class="directory" data-name="${name}" data-type="directory" title="${name}">
-                      <div class="icon directory-icon">📁</div>
-                      <h3>${name}</h3>
-                  </div>
-              `;
+            const formatFileSize = (size) => {
+                if (!size) return "";
+                const units = ["B", "KB", "MB", "GB", "TB"];
+                let unitIndex = 0;
+                while (size >= 1024 && unitIndex < units.length - 1) {
+                    size /= 1024;
+                    unitIndex++;
+                }
+                return `${size.toFixed(1)} ${units[unitIndex]}`;
             };
 
-            const GO_UP = () => {
+            const FILE = (name, path, size) => {
+                const filePath = path === "/" ? `/${name}` : `${path}/${name}`;
+                const iconEmoji = getFileIcon(name);
+                const sizeText = size ? formatFileSize(size) : "";
+
                 return `
-                  <div class="go-up" data-type="go-up">
-                      <div class="icon">🔙</div>
-                  </div>
-              `;
+                    <div class="item file-item" data-name="${name}" data-path="${filePath}" data-type="file" title="${name}${
+                    sizeText ? ` (${sizeText})` : ""
+                }">
+                        <div class="item-icon">
+                            <span class="emoji-icon">${iconEmoji}</span>
+                        </div>
+                        <div class="item-info">
+                            <div class="item-name" title="${name}">${name}</div>
+                            ${
+                                sizeText
+                                    ? `<div class="item-size" title="${sizeText}">${sizeText}</div>`
+                                    : ""
+                            }
+                        </div>
+                    </div>
+                `;
             };
 
-            let currentPath = "/";
+            const DIR = (name, path) => {
+                const dirPath = path === "/" ? `/${name}` : `${path}/${name}`;
+                return `
+                    <div class="item directory-item" data-name="${name}" data-path="${dirPath}" data-type="directory" title="${name} (Folder)">
+                        <div class="item-icon">
+                            <span class="emoji-icon">📁</span>
+                        </div>
+                        <div class="item-info">
+                            <div class="item-name" title="${name}">${name}</div>
+                            <div class="item-type">Folder</div>
+                        </div>
+                    </div>
+                `;
+            };
 
-            let pathElement = document.getElementById("path");
+            // Navigation history
+            let navigationHistory = [];
+            let currentHistoryIndex = -1;
 
-            const updatePath = () => {
-                pathElement.innerText = currentPath;
+            // Get current path from URL
+            const getCurrentPath = () => {
+                const urlPath = window.location.pathname;
+                if (urlPath === "/explore" || urlPath === "/explore/") {
+                    return "/";
+                }
+                return urlPath.substring("/explore".length) || "/";
+            };
+
+            // Update breadcrumb navigation
+            const updateBreadcrumb = (path) => {
+                const breadcrumb = document.getElementById("breadcrumb");
+                const parts =
+                    path === "/"
+                        ? ["C:"]
+                        : ["C:", ...path.split("/").filter((p) => p)];
+
+                breadcrumb.innerHTML = parts
+                    .map((part, index) => {
+                        const isLast = index === parts.length - 1;
+                        const breadcrumbPath =
+                            index === 0
+                                ? "/"
+                                : "/" + parts.slice(1, index + 1).join("/");
+
+                        return `
+                        <span class="breadcrumb-item ${isLast ? "active" : ""}" 
+                              ${
+                                  !isLast
+                                      ? `data-path="${breadcrumbPath}" onclick="navigateToPath('${breadcrumbPath}')"`
+                                      : ""
+                              }>
+                            ${part}
+                        </span>
+                        ${
+                            !isLast
+                                ? '<span class="breadcrumb-separator">›</span>'
+                                : ""
+                        }
+                    `;
+                    })
+                    .join("");
+            };
+
+            // Update navigation buttons
+            const updateNavigationButtons = () => {
+                const backBtn = document.getElementById("go-back");
+                const forwardBtn = document.getElementById("go-forward");
+
+                backBtn.disabled = currentHistoryIndex <= 0;
+                forwardBtn.disabled =
+                    currentHistoryIndex >= navigationHistory.length - 1;
+            };
+
+            const showLoading = () => {
+                document.getElementById("loading").style.display = "flex";
+                document.getElementById("file-container").style.display =
+                    "none";
+                document.getElementById("empty-state").style.display = "none";
+            };
+
+            const hideLoading = () => {
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("file-container").style.display =
+                    "flex";
+            };
+
+            const showEmptyState = () => {
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("file-container").style.display =
+                    "none";
+                document.getElementById("empty-state").style.display = "flex";
             };
 
             const loadFiles = async (path) => {
-                let response = await fetch(`/files${path}`);
-                if (!response.ok) {
-                    alert("Error loading files: " + response.statusText);
-                    return;
-                }
-                let data = await response.json();
-                let container = document.querySelector(".container");
-                container.innerHTML = "";
+                showLoading();
 
-                if (currentPath !== "/") {
-                    container.innerHTML += GO_UP();
-                }
+                let apiPath = path === "/" ? "/" : path;
 
-                data.forEach((file) => {
-                    if (file.isDir) {
-                        container.innerHTML += DIR(file.name);
-                    } else {
-                        container.innerHTML += FILE(file.name);
+                try {
+                    let response = await fetch(`/files${apiPath}`);
+                    if (!response.ok) {
+                        throw new Error(
+                            `HTTP ${response.status}: ${response.statusText}`
+                        );
                     }
-                });
+                    let data = await response.json();
+                    let container = document.getElementById("file-container");
+                    container.innerHTML = "";
 
-                attachEventListeners();
+                    if (data.length === 0) {
+                        showEmptyState();
+                        return;
+                    }
+
+                    // Sort: directories first, then files alphabetically
+                    data.sort((a, b) => {
+                        if (a.isDir && !b.isDir) return -1;
+                        if (!a.isDir && b.isDir) return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+
+                    // Add files and directories
+                    data.forEach((file) => {
+                        if (file.isDir) {
+                            container.innerHTML += DIR(file.name, path);
+                        } else {
+                            container.innerHTML += FILE(
+                                file.name,
+                                path,
+                                file.size
+                            );
+                        }
+                    });
+
+                    hideLoading();
+                    attachEventListeners();
+                } catch (error) {
+                    hideLoading();
+                    console.error("Error loading files:", error);
+                    container.innerHTML = `
+                        <div class="error-state">
+                            <span class="emoji-icon large">⚠️</span>
+                            <h3>Error loading files</h3>
+                            <p>${error.message}</p>
+                            <button class="btn btn-primary" onclick="loadFiles('${path}')">
+                                <span class="emoji-icon">🔄</span> Try Again
+                            </button>
+                        </div>
+                    `;
+                }
             };
 
             const attachEventListeners = () => {
-                document.querySelectorAll(".go-up").forEach((element) => {
+                // Handle file and directory clicks
+                document.querySelectorAll(".item").forEach((element) => {
                     element.onclick = (e) => {
-                        currentPath = currentPath.slice(
-                            0,
-                            currentPath.lastIndexOf(
-                                "/",
-                                currentPath.length - 2
-                            ) + 1
-                        );
-                        loadFiles(currentPath);
-                        updatePath();
+                        e.preventDefault();
+                        const name = element.dataset.name;
+                        const path = element.dataset.path;
+                        const type = element.dataset.type;
+
+                        if (type === "directory") {
+                            navigateToPath(path);
+                        } else if (type === "file") {
+                            window.open(`/files${path}`, "_blank");
+                        }
                     };
                 });
-
-                document
-                    .querySelectorAll(".file, .directory")
-                    .forEach((element) => {
-                        element.onclick = (e) => {
-                            const name = element.dataset.name;
-                            const type = element.dataset.type;
-
-                            if (type === "directory") {
-                                currentPath += `${name}/`;
-                                loadFiles(currentPath);
-                            } else if (type === "file") {
-                                window.open(
-                                    `/files${currentPath}${name}`,
-                                    "_blank"
-                                );
-                            }
-                            updatePath();
-                        };
-                    });
             };
 
+            const navigateToPath = (path, addToHistory = true) => {
+                if (addToHistory) {
+                    // Remove any forward history if we're navigating to a new path
+                    navigationHistory = navigationHistory.slice(
+                        0,
+                        currentHistoryIndex + 1
+                    );
+                    navigationHistory.push(path);
+                    currentHistoryIndex = navigationHistory.length - 1;
+                }
+
+                const url = path === "/" ? "/explore" : `/explore${path}`;
+                window.history.pushState({ path: path }, "", url);
+                updateBreadcrumb(path);
+                updateNavigationButtons();
+                loadFiles(path);
+            };
+
+            // Initialize event listeners
+            const initializeEventListeners = () => {
+                // Navigation buttons
+                document.getElementById("go-back").onclick = () => {
+                    if (currentHistoryIndex > 0) {
+                        currentHistoryIndex--;
+                        const path = navigationHistory[currentHistoryIndex];
+                        navigateToPath(path, false);
+                    }
+                };
+
+                document.getElementById("go-forward").onclick = () => {
+                    if (currentHistoryIndex < navigationHistory.length - 1) {
+                        currentHistoryIndex++;
+                        const path = navigationHistory[currentHistoryIndex];
+                        navigateToPath(path, false);
+                    }
+                };
+
+                document.getElementById("refresh").onclick = () => {
+                    const currentPath = getCurrentPath();
+                    loadFiles(currentPath);
+                };
+
+                // View toggle
+                document.getElementById("grid-view").onclick = () => {
+                    document
+                        .getElementById("grid-view")
+                        .classList.add("active");
+                    document
+                        .getElementById("list-view")
+                        .classList.remove("active");
+                    document.getElementById("file-container").className =
+                        "container";
+                };
+
+                document.getElementById("list-view").onclick = () => {
+                    document
+                        .getElementById("list-view")
+                        .classList.add("active");
+                    document
+                        .getElementById("grid-view")
+                        .classList.remove("active");
+                    document.getElementById("file-container").className =
+                        "container list-view";
+                };
+
+                // Search functionality
+                document.getElementById("search-input").oninput = (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const items = document.querySelectorAll(".item");
+
+                    items.forEach((item) => {
+                        const name = item.dataset.name.toLowerCase();
+                        if (name.includes(searchTerm)) {
+                            item.style.display = "flex";
+                        } else {
+                            item.style.display = "none";
+                        }
+                    });
+                };
+
+                // Handle browser back/forward buttons
+                window.addEventListener("popstate", (event) => {
+                    const path = getCurrentPath();
+                    updateBreadcrumb(path);
+                    loadFiles(path);
+                });
+            };
+
+            // Initialize on page load
             window.onload = () => {
-                updatePath();
+                const currentPath = getCurrentPath();
+                navigationHistory = [currentPath];
+                currentHistoryIndex = 0;
+
+                updateBreadcrumb(currentPath);
+                updateNavigationButtons();
                 loadFiles(currentPath);
+                initializeEventListeners();
             };
         </script>
     </body>

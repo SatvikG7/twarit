@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -293,8 +294,33 @@ type fileInfo struct {
 	IsDir bool   `json:"isDir"`
 }
 
+func ExplorePageHandler(w http.ResponseWriter, r *http.Request) {
+	// Simply serve the explore.html file
+	// The JavaScript will handle extracting the path from the URL
+	http.ServeFile(w, r, "src/explore.html")
+}
+
 func ExploreHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/files"):]
+
+	// Convert URL path to Windows path
+	if path == "" || path == "/" {
+		path = "C:/"
+	} else {
+		// Remove leading slash and ensure proper Windows path format
+		if path[0] == '/' {
+			path = path[1:]
+		}
+		if len(path) >= 2 && path[1] == ':' {
+			// Already a Windows path like C:/something
+		} else {
+			// Prepend C:/ if not a full Windows path
+			path = "C:/" + path
+		}
+	}
+
+	// Convert forward slashes to backslashes for Windows
+	path = strings.ReplaceAll(path, "/", "\\")
 
 	files, err := os.Stat(path)
 	if err != nil {
@@ -303,7 +329,7 @@ func ExploreHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if files.IsDir() {
-		// get all files in C: directory
+		// get all files in directory
 		files, err := os.ReadDir(path)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
