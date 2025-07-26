@@ -1,0 +1,108 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+  user-select: none;
+}
+
+#app {
+  max-width: 1440px;
+  margin: 20px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+#path-wrapper {
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#c {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 5px 10px 20px;
+  height: 20px;
+  background-color: #9bc4e2;
+  border-radius: 20px 0 0 20px;
+}
+
+#path {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px 10px 5px;
+  height: 20px;
+  background-color: #d0d0d0;
+  border-radius: 0 20px 20px 0;
+}
+
+h1 {
+  text-align: center;
+  color: #444;
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: space-around;
+}
+
+.file,
+.directory,
+.go-up {
+  width: 100px;
+  padding: 10px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.go-up {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h3 {
+  margin: 0;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file:hover,
+.directory:hover,
+.go-up:hover {
+  background-color: #d0d0d0;
+  transform: scale(1.05);
+}
+
+.icon {
+  font-size: 40px;
+}
+
+.directory:hover {
+  background-color: #ffda77;
+}
+
+.go-up {
+  background-color: #9bc4e2;
+}
+
+.go-up:hover {
+  background-color: #7faed1;
+}

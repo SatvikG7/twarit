@@ -17,11 +17,13 @@ func Route() {
 	http.HandleFunc("/explore", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "src/explore.html")
 	})
-	
+
 	http.Handle("/favicon.ico", http.StripPrefix("/", srcDir))
 	http.Handle("/logo.png", http.StripPrefix("/", srcDir))
 	http.HandleFunc("/files/", handler.ExploreHandler)
 
-	// Handle file uploads
+	// Handle file uploads with progress tracking
 	http.HandleFunc("/upload", handler.UploadHandler)
+	http.HandleFunc("/progress", handler.ProgressHandler)
+	http.HandleFunc("/ws-progress", handler.WSProgressHandler)
 }
